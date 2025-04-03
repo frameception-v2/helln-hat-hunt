@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useFrameSDK } from "~/hooks/useFrameSDK";
 import { PROJECT_TITLE, PROJECT_DESCRIPTION } from "~/lib/constants";
-import type { FrameContext } from "@farcaster/frame-sdk";
+import type { FrameContext } from "@farcaster/frame-node";
 
 function ContextDisplay({ context }: { context: FrameContext | undefined }) {
   const [isExpanded, setIsExpanded] = useState(false);
