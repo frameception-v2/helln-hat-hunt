@@ -1,80 +1,105 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
-import { FrameContext } from "@farcaster/frame-node";
+import { FrameContext, FrameNotificationDetails } from "@farcaster/frame-node";
 
 export function useFrameSDK() {
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<FrameContext | undefined>();
+  const [isInFrame, setIsInFrame] = useState(false);
+  const [context, setContext] = useState<FrameContext>();
   const [isFramePinned, setIsFramePinned] = useState(false);
+  const [notificationDetails, setNotificationDetails] =
+    useState<FrameNotificationDetails | null>(null);
   const [lastEvent, setLastEvent] = useState("");
+  const [pinFrameResponse, setPinFrameResponse] = useState("");
 
   useEffect(() => {
-    const initializeSDK = async () => {
-      try {
-        // Get the context from the SDK
-        const frameContext = await sdk.context;
-        setContext(frameContext);
-        
-        if (frameContext?.client?.added) {
-          setIsFramePinned(true);
-        }
+    const load = async () => {
+      console.log("LOAD", sdk.context);
+      const frameContext = await sdk.context;
 
-        // Set up event listeners
-        sdk.on("frameAdded", () => {
-          setLastEvent("frameAdded");
-          setIsFramePinned(true);
-        });
-
-        sdk.on("frameAddRejected", ({ reason }) => {
-          setLastEvent(`frameAddRejected: ${reason}`);
-        });
-
-        sdk.on("frameRemoved", () => {
-          setLastEvent("frameRemoved");
-          setIsFramePinned(false);
-        });
-
-        // Signal that the frame is ready
-        sdk.actions.ready();
-        
-        // Mark SDK as loaded
-        setIsSDKLoaded(true);
-      } catch (error) {
-        console.error("Error initializing Frame SDK:", error);
-        // Still mark as loaded to avoid infinite loading state
-        setIsSDKLoaded(true);
+      if (!frameContext) {
+        // has no frameContext from Farcaster
+        return;
       }
+
+      setContext(frameContext as unknown as FrameContext);
+      setIsFramePinned(frameContext.client.added);
+
+      sdk.on("frameAdded", ({ notificationDetails }) => {
+        setLastEvent(
+          `frameAdded${notificationDetails ? ", notifications enabled" : ""}`,
+        );
+        setIsFramePinned(true);
+        if (notificationDetails) setNotificationDetails(notificationDetails);
+      });
+
+      sdk.on("frameAddRejected", ({ reason }) => {
+        setLastEvent(`frameAddRejected, reason ${reason}`);
+      });
+
+      sdk.on("frameRemoved", () => {
+        setLastEvent("frameRemoved");
+        setIsFramePinned(false);
+        setNotificationDetails(null);
+      });
+
+      sdk.on("notificationsEnabled", ({ notificationDetails }) => {
+        setLastEvent("notificationsEnabled");
+        setNotificationDetails(notificationDetails);
+      });
+
+      sdk.on("notificationsDisabled", () => {
+        setLastEvent("notificationsDisabled");
+        setNotificationDetails(null);
+      });
+
+      sdk.actions.ready();
     };
 
-    if (!isSDKLoaded) {
-      initializeSDK();
+    if (sdk && !isSDKLoaded) {
+      setIsSDKLoaded(true);
+      load();
+      return () => {
+        sdk.removeAllListeners();
+      };
     }
-
-    return () => {
-      // Clean up event listeners
-      sdk.removeAllListeners();
-    };
   }, [isSDKLoaded]);
 
   const pinFrame = useCallback(async () => {
     try {
+      setNotificationDetails(null);
+
       const result = await sdk.actions.addFrame();
       console.log("addFrame result", result);
-      return result;
+      // @ts-expect-error - result type mixup
+      if (result.added) {
+        if (result.notificationDetails) {
+          setNotificationDetails(result.notificationDetails);
+        }
+        setPinFrameResponse(
+          result.notificationDetails
+            ? `Added, got notificaton token ${result.notificationDetails.token} and url ${result.notificationDetails.url}`
+            : "Added, got no notification details",
+        );
+      }
     } catch (error) {
-      console.error("Error pinning frame:", error);
-      return null;
+      setPinFrameResponse(`Error: ${error}`);
     }
   }, []);
 
   return {
-    isSDKLoaded,
-    sdk,
     context,
     pinFrame,
+    pinFrameResponse,
     isFramePinned,
-    lastEvent
+    notificationDetails,
+    lastEvent,
+    sdk,
+    isSDKLoaded,
+    isAuthDialogOpen,
+    setIsAuthDialogOpen,
+    isInFrame,
   };
 }
