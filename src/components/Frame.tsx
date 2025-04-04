@@ -12,88 +12,35 @@ import {
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useFrameSDK } from "~/hooks/useFrameSDK";
-import { PROJECT_TITLE, PROJECT_DESCRIPTION, DEGEN_TIPS_URL } from "~/lib/constants";
-import type { FrameContext } from "@farcaster/frame-node";
+import { PROJECT_TITLE, PROJECT_DESCRIPTION, USDC_ADDRESS, RECIPIENT_ADDRESS } from "~/lib/constants";
 import SnakeGame from "~/components/SnakeGame";
 
-function ContextDisplay({ context }: { context: FrameContext | undefined }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  const toggleExpand = useCallback(() => {
-    setIsExpanded(prev => !prev);
-  }, []);
 
-  if (!context) return null;
-
-  return (
-    <div className="mt-4 text-sm">
-      <div className="flex justify-between items-center">
-        <Label className="font-medium">Frame Context</Label>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={toggleExpand}
-        >
-          {isExpanded ? "Hide" : "Show"}
-        </Button>
-      </div>
-      
-      {isExpanded && (
-        <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-md overflow-auto max-h-40">
-          <pre className="text-xs">{JSON.stringify(context, null, 2)}</pre>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ActionButtons({ 
-  sdk, 
-  pinFrame, 
-  isFramePinned 
-}: { 
-  sdk: typeof import("@farcaster/frame-sdk").default; 
-  pinFrame: () => Promise<any>; 
-  isFramePinned: boolean;
-}) {
-  const openDegenTips = useCallback(() => {
-    sdk.actions.openUrl(DEGEN_TIPS_URL);
-  }, [sdk]);
-
-  const closeFrame = useCallback(() => {
-    sdk.actions.close();
+function ActionButtons({ sdk }: { sdk: import("@farcaster/frame-sdk").FrameSDK }) {
+  const buyLives = useCallback(() => {
+    sdk.transferTokens({
+      tokenAddress: USDC_ADDRESS,
+      recipientAddress: RECIPIENT_ADDRESS,
+      amount: '1000000', // 1 USDC (6 decimals)
+      chainId: '8453', // Base Mainnet
+      actionType: 'mint'
+    });
   }, [sdk]);
 
   return (
     <div className="flex gap-2 justify-end">
-      {!isFramePinned && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={pinFrame}
-        >
-          Pin Frame
-        </Button>
-      )}
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={closeFrame}
-      >
-        Close Frame
-      </Button>
       <Button 
         size="sm" 
-        onClick={openDegenTips}
+        onClick={buyLives}
       >
-        Degen Tips
+        Buy More Lives (1 USDC)
       </Button>
     </div>
   );
 }
 
 export default function Frame() {
-  const { isSDKLoaded, sdk, context, pinFrame, isFramePinned, lastEvent } = useFrameSDK();
+  const { isSDKLoaded, sdk, lastEvent } = useFrameSDK();
 
   if (!isSDKLoaded) {
     return <div className="flex justify-center items-center h-[200px]">Loading...</div>;
@@ -125,10 +72,9 @@ export default function Frame() {
             </div>
           )}
           
-          <ContextDisplay context={context} />
         </CardContent>
         <CardFooter>
-          <ActionButtons sdk={sdk} pinFrame={pinFrame} isFramePinned={isFramePinned} />
+          <ActionButtons sdk={sdk} />
         </CardFooter>
       </Card>
     </div>
