@@ -100,7 +100,13 @@ export default function Frame() {
   }
 
   return (
-    <div className="w-[300px] mx-auto py-2 px-2">
+    <div className="w-full max-w-4xl mx-auto p-4">
+      <div className="relative mb-4" style={{ paddingTop: '75%' }}>
+        <div className="absolute top-0 left-0 w-full h-full">
+          <SnakeGame />
+        </div>
+      </div>
+      
       <Card>
         <CardHeader>
           <CardTitle>{PROJECT_TITLE}</CardTitle>
@@ -109,11 +115,7 @@ export default function Frame() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <SnakeGame />
-          </div>
-          
-          <p className="text-sm mt-4">
+          <p className="text-sm">
             Use arrow keys or buttons to control the snake. Collect degen hats 🎩 to score points!
           </p>
           
