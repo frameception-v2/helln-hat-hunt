@@ -13,19 +13,45 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useFrameSDK } from "~/hooks/useFrameSDK";
 import { PROJECT_TITLE, PROJECT_DESCRIPTION, USDC_ADDRESS, RECIPIENT_ADDRESS } from "~/lib/constants";
+import { ERC20_ABI } from "~/lib/abi";
 import SnakeGame from "~/components/SnakeGame";
+import { createPublicClient, createWalletClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http()
+});
 
 
-function ActionButtons({ sdk }: { sdk: import("@farcaster/frame-sdk").FrameSDK }) {
-  const buyLives = useCallback(() => {
-    sdk.transferTokens({
-      tokenAddress: USDC_ADDRESS,
-      recipientAddress: RECIPIENT_ADDRESS,
-      amount: '1000000', // 1 USDC (6 decimals)
-      chainId: '8453', // Base Mainnet
-      actionType: 'mint'
+function ActionButtons({ sdk }: { sdk: any }) {
+  const buyLives = useCallback(async () => {
+    const walletClient = createWalletClient({
+      chain: base,
+      transport: http()
     });
-  }, [sdk]);
+
+    try {
+      const hash = await walletClient.writeContract({
+        address: USDC_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [
+          RECIPIENT_ADDRESS,
+          1000000 // 1.0 USDC (6 decimals)
+        ],
+      });
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status === 'success') {
+        console.log('Transfer successful:', receipt);
+      } else {
+        console.error('Transfer failed:', receipt);
+      }
+    } catch (error) {
+      console.error('Transaction error:', error);
+    }
+  }, []);
 
   return (
     <div className="flex gap-2 justify-end">
