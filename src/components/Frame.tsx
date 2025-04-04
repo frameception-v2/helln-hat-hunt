@@ -26,19 +26,24 @@ const publicClient = createPublicClient({
 
 function ActionButtons({ sdk }: { sdk: any }) {
   const buyLives = useCallback(async () => {
+    const [account] = await window.ethereum.request({ 
+      method: 'eth_requestAccounts' 
+    });
+    
     const walletClient = createWalletClient({
       chain: base,
-      transport: http()
+      transport: custom(window.ethereum)
     });
 
     try {
       const hash = await walletClient.writeContract({
+        account: account as `0x${string}`,
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'transfer',
         args: [
           RECIPIENT_ADDRESS,
-          1000000 // 1.0 USDC (6 decimals)
+          BigInt(1000000) // 1.0 USDC (6 decimals)
         ],
       });
       
