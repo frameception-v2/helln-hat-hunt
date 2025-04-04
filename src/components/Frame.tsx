@@ -12,8 +12,9 @@ import {
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useFrameSDK } from "~/hooks/useFrameSDK";
-import { PROJECT_TITLE, PROJECT_DESCRIPTION } from "~/lib/constants";
+import { PROJECT_TITLE, PROJECT_DESCRIPTION, DEGEN_TIPS_URL } from "~/lib/constants";
 import type { FrameContext } from "@farcaster/frame-node";
+import SnakeGame from "~/components/SnakeGame";
 
 function ContextDisplay({ context }: { context: FrameContext | undefined }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -55,8 +56,8 @@ function ActionButtons({
   pinFrame: () => Promise<any>; 
   isFramePinned: boolean;
 }) {
-  const openDocs = useCallback(() => {
-    sdk.actions.openUrl("https://docs.farcaster.xyz/developers/");
+  const openDegenTips = useCallback(() => {
+    sdk.actions.openUrl(DEGEN_TIPS_URL);
   }, [sdk]);
 
   const closeFrame = useCallback(() => {
@@ -83,9 +84,9 @@ function ActionButtons({
       </Button>
       <Button 
         size="sm" 
-        onClick={openDocs}
+        onClick={openDegenTips}
       >
-        Open Docs
+        Degen Tips
       </Button>
     </div>
   );
@@ -108,8 +109,12 @@ export default function Frame() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">
-            This is a Farcaster Frame v2 mini-app. You can interact with it directly from your Farcaster feed.
+          <div className="mb-4">
+            <SnakeGame />
+          </div>
+          
+          <p className="text-sm mt-4">
+            Use arrow keys or buttons to control the snake. Collect degen hats 🎩 to score points!
           </p>
           
           {lastEvent && (
